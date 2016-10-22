@@ -9,13 +9,8 @@ module Vagrant
         @path = UNSET_VALUE
       end
 
-      def finalize!
-        return if @size == UNSET_VALUE
-      end
-
-      def validate(machine)
-        errors = []
-        return { 'Newdisk configuration' => errors }
+      def is_set?
+        @size != UNSET_VALUE and @path != UNSET_VALUE
       end
     end
   end

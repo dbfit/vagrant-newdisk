@@ -6,6 +6,7 @@ module Vagrant
         def initialize(app, env)
           @app = app
           @machine = env[:machine]
+          @config = @machine.config.newdisk
           @enabled = true
           @ui = env[:ui]
           if @machine.provider.to_s !~ /VirtualBox/
@@ -16,12 +17,17 @@ module Vagrant
 
         def call(env)
           # Create the disk before boot
-          if @enabled
-            size = @machine.config.newdisk.size
-            path = @machine.config.newdisk.path
-            env[:ui].info "start newdisk: size = #{size}, path = #{path}"
-            new_disk(env, path, size)
-            env[:ui].success "done newdisk: size = #{size}, path = #{path}"
+          if @enabled and @config.is_set?
+            path = @config.path
+            size = @config.size
+            env[:ui].info "call newdisk: size = #{size}, path = #{path}"
+
+            if File.exist? path
+              env[:ui].info "skip newdisk - already exists: #{path}"
+            else
+              new_disk(env, path, size)
+              env[:ui].success "done newdisk: size = #{size}, path = #{path}"
+            end
           end
 
           # Allow middleware chain to continue so VM is booted
