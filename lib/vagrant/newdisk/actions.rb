@@ -19,9 +19,9 @@ module Vagrant
           if @enabled
             size = @machine.config.newdisk.size
             path = @machine.config.newdisk.path
-            env[:ui].error("size = #{size}")
-            env[:ui].error("path = #{path}")
+            env[:ui].info "start newdisk: size = #{size}, path = #{path}"
             new_disk(env, path, size)
+            env[:ui].success "done newdisk: size = #{size}, path = #{path}"
           end
 
           # Allow middleware chain to continue so VM is booted
@@ -38,6 +38,7 @@ module Vagrant
 
         def attach_disk(driver, path)
           disk = find_place_for_new_disk(driver)
+          @ui.info "Attaching new disk: #{path} at #{disk}"
           driver.execute('storageattach', @machine.id, '--storagectl', disk[:controller],
                          '--port', disk[:port].to_s, '--device', disk[:device].to_s, '--type', 'hdd',
                          '--medium', path)
@@ -45,17 +46,14 @@ module Vagrant
 
         def find_place_for_new_disk(driver)
           disks = get_disks(driver)
-          @ui.error "disks = #{disks.to_s}"
+          @ui.info "existing disks = #{disks.to_s}"
           controller = disks.first[:controller]
           disks = disks.select { |disk| disk[:controller] == controller }
           port = disks.map { |disk| disk[:port] }.max
           disks = disks.select { |disk| disk[:port] == port }
           max_device = disks.map { |disk| disk[:device] }.max
 
-          @ui.error "last disks: #{disks.to_s}"
-          new_disk = {:controller => controller, :port => port.to_i, :device => max_device.to_i + 1}
-          @ui.error "new disk: #{new_disk.to_s}"
-          new_disk
+          {:controller => controller, :port => port.to_i, :device => max_device.to_i + 1}
         end
 
         def get_disks(driver)
